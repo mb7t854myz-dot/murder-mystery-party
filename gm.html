@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Game Master — Mystery Party</title>
+<link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="nav-logo"><span class="dagger">🔪</span>MYSTERY</div>
+    <div class="nav-tabs">
+      <a href="/gm" class="nav-tab active">Game Master</a>
+      <a href="/join" class="nav-tab">Join Game</a>
+      <a href="/display" class="nav-tab">Results Display</a>
+    </div>
+    <div class="nav-code" id="nav-code"></div>
+  </nav>
+
+  <div class="main">
+    <!-- GAME LIST VIEW -->
+    <div id="view-list">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px">
+        <div>
+          <h1 style="font-size:26px;color:var(--accent);margin-bottom:6px">Game Master</h1>
+          <p style="font-size:14px;color:var(--text3);font-family:'Crimson Text',serif;font-style:italic">Create and control your murder mystery games</p>
+        </div>
+        <button class="btn btn-gold" onclick="showModal('modal-create')">+ New Game</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Your Games</div></div>
+        <div id="games-list"><div class="empty">No games yet. Create your first mystery...</div></div>
+      </div>
+    </div>
+
+    <!-- ACTIVE GAME VIEW -->
+    <div id="view-game" style="display:none">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <h1 style="font-size:22px;color:var(--accent)" id="g-name">Game</h1>
+            <span class="badge badge-teal" id="g-status">Active</span>
+          </div>
+          <div style="font-size:13px;color:var(--text3);margin-top:5px">
+            Code: <strong id="g-code" style="font-family:'Cinzel',serif;color:var(--accent);letter-spacing:.1em"></strong>
+            &nbsp;·&nbsp; Share this with players → <strong id="g-joinlink" style="font-size:11px;color:var(--text3)"></strong>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="backToList()">← All Games</button>
+          <button class="btn btn-sm" onclick="window.open('/display?game='+currentGameId,'_blank')">Results Screen ↗</button>
+          <button class="btn btn-sm btn-red" onclick="endGame()">End Game</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid3" style="margin-bottom:18px">
+        <div class="stat"><div class="stat-num" id="s-players">0</div><div class="stat-lbl">Players</div></div>
+        <div class="stat"><div class="stat-num" id="s-roles">0</div><div class="stat-lbl">Roles Assigned</div></div>
+        <div class="stat"><div class="stat-num pulse" id="s-votes" style="color:var(--purple)">0</div><div class="stat-lbl">Votes Cast</div></div>
+      </div>
+
+      <div class="page-tabs">
+        <button class="page-tab active" onclick="setTab('players')">Players</button>
+        <button class="page-tab" onclick="setTab('roles')">Assign Roles</button>
+        <button class="page-tab" onclick="setTab('voting')">Voting</button>
+        <button class="page-tab" onclick="setTab('activity')">Activity</button>
+      </div>
+
+      <!-- PLAYERS TAB -->
+      <div id="tab-players">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Joined Players</div>
+            <span class="badge badge-teal" id="player-count-badge">0</span>
+          </div>
+          <div id="players-list"><div class="empty">Waiting for players to join...</div></div>
+        </div>
+      </div>
+
+      <!-- ROLES TAB -->
+      <div id="tab-roles" style="display:none">
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Assign Roles</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:3px">Manually pick a role for each player, then save</div>
+            </div>
+            <button class="btn btn-gold btn-sm" onclick="saveAssignments()">Save Assignments</button>
+          </div>
+          <div id="assign-list"><div class="empty">No players yet</div></div>
+          <div style="margin-top:14px">
+            <button class="btn btn-sm btn-red" onclick="clearAssignments()">Clear All</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Role Library</div>
+            <button class="btn btn-sm" onclick="showModal('modal-role')">+ Add Role</button>
+          </div>
+          <div id="roles-library"></div>
+        </div>
+      </div>
+
+      <!-- VOTING TAB -->
+      <div id="tab-voting" style="display:none">
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header"><div class="card-title">Voting Controls</div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+            <div class="toggle">
+              <label class="toggle-switch">
+                <input type="checkbox" id="voting-toggle" onchange="toggleVoting(this.checked)"/>
+                <span class="toggle-slider"></span>
+              </label>
+              <div>
+                <div style="font-size:14px;font-weight:500" id="voting-label">Voting is OFF</div>
+                <div style="font-size:12px;color:var(--text3)">Players only see the voting panel when this is on</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-sm btn-red" onclick="resetVotes()">Reset Votes</button>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <div class="card-title">Live Results</div>
+            <span class="badge badge-purple" id="total-votes-badge">0 votes</span>
+          </div>
+          <div id="gm-vote-results"><div class="empty">No votes cast yet</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Suspects (who can be voted for)</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:3px">Choose which players appear as voting options</div>
+            </div>
+            <button class="btn btn-sm" onclick="selectAllVotable()">Select All</button>
+          </div>
+          <div id="votable-list"></div>
+        </div>
+      </div>
+
+      <!-- ACTIVITY TAB -->
+      <div id="tab-activity" style="display:none">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Game Activity Log</div></div>
+          <div id="activity-log"><div class="empty">No activity yet</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-create" style="display:none" onclick="closeModal('modal-create')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Create New Game</div>
+    <div class="field"><div class="label">Game Name</div><input class="input" id="new-name" placeholder="e.g. Mansion of Secrets"/></div>
+    <div class="field"><div class="label">Theme / Setting (optional)</div><input class="input" id="new-theme" placeholder="e.g. 1920s English manor, space station..."/></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-create')">Cancel</button>
+      <button class="btn btn-gold" onclick="createGame()">Create Game</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-role" style="display:none" onclick="closeModal('modal-role')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Add Role</div>
+    <div class="field"><div class="label">Role Name</div><input class="input" id="role-name" placeholder="e.g. Colonel Blackwood"/></div>
+    <div class="field"><div class="label">Backstory / Description</div><textarea class="input" id="role-desc" placeholder="e.g. Retired military officer with a dark secret..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-role')">Cancel</button>
+      <button class="btn btn-gold" onclick="addRole()">Add Role</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/gm.js"></script>
+</body>
+</html>
